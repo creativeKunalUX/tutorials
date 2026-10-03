@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citymax — Downtime % Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0B1F3A;
+    --navy-light:#15315E;
+    --navy-pale:#1D3E6E;
+    --teal:#0EA88F;
+    --teal-pale:#E3F6F2;
+    --amber:#EE9D2B;
+    --amber-pale:#FDF1DD;
+    --red:#E0524A;
+    --red-pale:#FBEAE9;
+    --bg:#F2F4F8;
+    --card:#FFFFFF;
+    --ink:#152042;
+    --muted:#707A93;
+    --faint:#9AA3B8;
+    --line:#E7EAF1;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(15,26,58,.04), 0 8px 24px -10px rgba(15,26,58,.10);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.font-display{font-family:'Sora',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  svg{display:block;}
+
+  /* ===== Header ===== */
+  .header{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{width:34px;height:34px;border-radius:9px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-family:'Sora';font-weight:700;font-size:16px;flex-shrink:0;}
+  .brand-text{display:flex;flex-direction:column;line-height:1.15;}
+  .brand-text .wordmark{font-size:11px;letter-spacing:.12em;color:#9FB6DC;text-transform:uppercase;}
+  .brand-text .title{font-family:'Sora';font-weight:600;font-size:17px;}
+  .client-badge{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.03em;display:flex;align-items:center;gap:6px;}
+  .client-badge .dot{width:6px;height:6px;border-radius:50%;background:#7CE7C9;}
+  .header-right{display:flex;align-items:center;gap:18px;}
+  .sync-pill{display:flex;align-items:center;gap:8px;font-size:12px;color:#C7D4EC;}
+  .pulse{width:8px;height:8px;border-radius:50%;background:#3FE3B4;box-shadow:0 0 0 0 rgba(63,227,180,.6);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,227,180,.55);}70%{box-shadow:0 0 0 7px rgba(63,227,180,0);}100%{box-shadow:0 0 0 0 rgba(63,227,180,0);}}
+  .icon-btn{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;position:relative;}
+  .icon-btn svg{width:16px;height:16px;}
+  .icon-btn .badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;}
+  .avatar{width:34px;height:34px;border-radius:9px;background:#3C5A8A;color:#fff;font-family:'Sora';font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .btn{font-family:'Inter';font-weight:600;font-size:13px;border:none;border-radius:9px;padding:9px 16px;cursor:pointer;display:flex;align-items:center;gap:7px;}
+  .btn svg{width:14px;height:14px;}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:hover{background:#0c9580;}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  .btn-ghost:hover{background:#F7F9FC;}
+
+  /* ===== Filter bar ===== */
+  .filterbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:20;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;font-weight:600;}
+  select{font-family:'Inter';font-size:13px;font-weight:500;color:var(--ink);border:1px solid var(--line);background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23707A93" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 8px center;background-size:14px;padding:7px 28px 7px 10px;border-radius:8px;appearance:none;cursor:pointer;min-width:150px;}
+  select:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  .seg{display:flex;background:#F1F3F8;border-radius:9px;padding:3px;gap:2px;}
+  .seg button{font-family:'Inter';font-size:12.5px;font-weight:600;color:var(--muted);background:transparent;border:none;padding:6px 11px;border-radius:7px;cursor:pointer;}
+  .seg button.active{background:var(--navy);color:#fff;}
+  .daterange{font-size:13px;color:var(--ink);font-weight:500;background:#F7F9FC;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-family:'JetBrains Mono';white-space:nowrap;}
+  .spacer{flex:1;}
+  .livetoggle{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-weight:600;}
+  .switch{width:34px;height:19px;border-radius:20px;background:var(--teal);position:relative;cursor:pointer;flex-shrink:0;}
+  .switch::after{content:'';position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#fff;}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;}
+  .chip{font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;}
+  .chip.active{background:var(--navy-pale);border-color:var(--navy-pale);color:#fff;}
+
+  /* ===== Body ===== */
+  .main{padding:22px 28px 40px;max-width:1480px;margin:0 auto;}
+  .crumbbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .crumb{display:flex;align-items:center;gap:6px;font-size:13px;}
+  .crumb span{cursor:pointer;color:var(--muted);font-weight:600;}
+  .crumb span.current{color:var(--ink);background:#fff;border:1px solid var(--line);padding:5px 12px;border-radius:20px;cursor:default;}
+  .crumb svg{width:13px;height:13px;color:var(--faint);}
+  .scope-note{font-size:12px;color:var(--faint);}
+
+  /* ===== KPI grid ===== */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 18px 16px;border:1px solid var(--line);}
+  .kpi-label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center;}
+  .kpi-value{font-family:'JetBrains Mono';font-weight:700;font-size:27px;margin-top:10px;line-height:1;}
+  .kpi-sub{font-size:11.5px;color:var(--faint);margin-top:8px;}
+  .kpi-formula{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);}
+  .trend-up{color:var(--red);}
+  .trend-down{color:var(--teal);}
+  .trend-tag{font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:3px;}
+
+  .ring-card{display:flex;align-items:center;gap:16px;}
+  .ring-wrap{position:relative;width:78px;height:78px;flex-shrink:0;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-center .n{font-family:'JetBrains Mono';font-weight:700;font-size:15px;}
+  .ring-center .l{font-size:8.5px;color:var(--faint);text-transform:uppercase;}
+  .legend-row{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin-top:5px;}
+  .legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+  .catbars{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+  .catbar-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
+  .catbar-row .name{width:78px;flex-shrink:0;}
+  .catbar-track{flex:1;height:5px;background:#EEF1F6;border-radius:3px;overflow:hidden;}
+  .catbar-fill{height:100%;background:var(--navy-pale);border-radius:3px;}
+  .catbar-row .qty{font-family:'JetBrains Mono';font-weight:600;color:var(--ink);width:34px;text-align:right;}
+
+  /* ===== Charts row ===== */
+  .charts-row{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-bottom:14px;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .card-title{font-family:'Sora';font-weight:600;font-size:14.5px;}
+  .card-caption{font-size:11.5px;color:var(--faint);margin-top:2px;}
+  .chart-box{height:230px;position:relative;}
+  .chart-legend{display:flex;gap:14px;align-items:center;flex-shrink:0;}
+  .chart-legend .item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600;}
+  .donut-legend{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .donut-legend-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);}
+  .donut-legend-row .left{display:flex;align-items:center;gap:7px;}
+  .donut-legend-row .val{font-family:'JetBrains Mono';font-weight:700;color:var(--ink);}
+
+  .trend-card .chart-box{height:240px;}
+
+  /* ===== Table ===== */
+  .table-card{margin-bottom:20px;}
+  .table-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  .search-box{display:flex;align-items:center;gap:7px;background:#F7F9FC;border:1px solid var(--line);border-radius:8px;padding:7px 11px;width:230px;}
+  .search-box svg{width:14px;height:14px;color:var(--faint);flex-shrink:0;}
+  .search-box input{border:none;background:transparent;font-family:'Inter';font-size:13px;outline:none;width:100%;color:var(--ink);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:600;padding:0 12px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr.clickable{cursor:pointer;}
+  tbody tr.clickable:hover{background:#F8FAFD;}
+  .name-cell{display:flex;align-items:center;gap:10px;font-weight:600;}
+  .row-bar{width:4px;height:26px;border-radius:3px;flex-shrink:0;}
+  .badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+  .badge .d{width:6px;height:6px;border-radius:50%;}
+  .badge-down{background:var(--red-pale);color:#A43730;}
+  .badge-down .d{background:var(--red);}
+  .badge-partly{background:var(--amber-pale);color:#9C6213;}
+  .badge-partly .d{background:var(--amber);}
+  .badge-ok{background:var(--teal-pale);color:#0C7A67;}
+  .badge-ok .d{background:var(--teal);}
+  .num{font-family:'JetBrains Mono';font-weight:600;}
+  .muted-cell{color:var(--faint);font-size:12px;}
+  .chevcell{color:var(--faint);}
+
+  /* ===== Schedule card ===== */
+  .schedule-card{margin-bottom:10px;}
+  .sched-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);}
+  .sched-row:last-child{border-bottom:none;}
+  .sched-left{display:flex;align-items:center;gap:12px;}
+  .sched-icon{width:36px;height:36px;border-radius:9px;background:var(--teal-pale);color:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sched-icon svg{width:16px;height:16px;}
+  .sched-name{font-weight:600;font-size:13.5px;}
+  .sched-meta{font-size:11.5px;color:var(--faint);margin-top:2px;}
+  .sched-actions{display:flex;gap:6px;}
+  .iconbtn-sm{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);}
+  .iconbtn-sm svg{width:13px;height:13px;}
+  .iconbtn-sm:hover{background:#F7F9FC;}
+
+  footer{text-align:center;font-size:11.5px;color:var(--faint);padding:18px 0 6px;}
+
+  /* ===== Modal ===== */
+  .modal-overlay{position:fixed;inset:0;background:rgba(11,31,58,.45);display:none;align-items:center;justify-content:center;z-index:100;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:#fff;border-radius:16px;width:440px;max-width:92vw;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .modal-head h3{margin:0;font-size:16px;}
+  .modal-sub{font-size:12.5px;color:var(--faint);margin-bottom:18px;}
+  .form-row{margin-bottom:14px;display:flex;flex-direction:column;gap:5px;}
+  .form-row label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .form-row input, .form-row select{font-family:'Inter';font-size:13.5px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px;}
+  .close-x{cursor:pointer;color:var(--faint);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;}
+  .close-x:hover{background:#F7F9FC;}
+  .close-x svg{width:15px;height:15px;}
+
+  @media (max-width:1100px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .charts-row{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="brand-mark">O</div>
+    <div class="brand-text">
+      <span class="wordmark">Outmarch · Operations Suite</span>
+      <span class="title">Downtime % Dashboard</span>
+    </div>
+    <div class="client-badge"><span class="dot"></span>CITYMAX</div>
+  </div>
+  <div class="header-right">
+    <div class="sync-pill"><span class="pulse"></span>Live · synced 12s ago</div>
+    <button class="btn btn-primary" id="openScheduleBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      Schedule Report
+    </button>
+    <div class="icon-btn"><span class="badge">3</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    </div>
+    <div class="avatar">PA</div>
+  </div>
+</div>
+
+<div class="filterbar">
+  <div class="field">
+    <label>Region</label>
+    <select id="regionSelect"><option value="">All Regions (PAN India)</option></select>
+  </div>
+  <div class="field">
+    <label>Store</label>
+    <select id="storeSelect"><option value="">All Stores</option></select>
+  </div>
+  <div class="field">
+    <label>Asset Category</label>
+    <div class="chips" id="categoryChips"></div>
+  </div>
+  <div class="field">
+    <label>Period</label>
+    <div class="seg" id="periodSeg">
+      <button data-p="D">Day</button>
+      <button data-p="W">Week</button>
+      <button data-p="M" class="active">Month</button>
+      <button data-p="Q">Qtr</button>
+      <button data-p="HY">HY</button>
+      <button data-p="Y">Year</button>
+    </div>
+  </div>
+  <div class="field">
+    <label>Date Range</label>
+    <div class="daterange" id="dateRangeLabel">1 – 30 Jun 2026</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="livetoggle">Real-time monitoring <div class="switch"></div></div>
+</div>
+
+<div class="main">
+
+  <div class="crumbbar">
+    <div class="crumb" id="breadcrumb"></div>
+    <div class="scope-note" id="scopeNote"></div>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title" id="compTitle">Down % by Region</div>
+          <div class="card-caption">Comparative downtime across the current scope — click a row in the table below to drill in</div>
+        </div>
+        <div class="chart-legend">
+          <span class="item"><span class="legend-dot" style="background:#E0524A"></span>Down %</span>
+          <span class="item"><span class="legend-dot" style="background:#EE9D2B"></span>Partly Down %</span>
+        </div>
+      </div>
+      <div class="chart-box" id="compChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Downtime Reason Classification</div>
+          <div class="card-caption">Root-cause split, current period</div>
+        </div>
+      </div>
+      <div class="chart-box" style="height:170px;display:flex;justify-content:center;" id="reasonChart"></div>
+      <div class="donut-legend" id="reasonLegend"></div>
+    </div>
+  </div>
+
+  <div class="card trend-card" style="margin-bottom:20px;">
+    <div class="card-head">
+      <div>
+        <div class="card-title" id="trendTitle">Down % &amp; Partly Down % Trend</div>
+        <div class="card-caption">Last 12 periods · current scope</div>
+      </div>
+      <div class="chart-legend">
+        <span class="item"><span class="legend-dot" style="background:#E0524A"></span>Down %</span>
+        <span class="item"><span class="legend-dot" style="background:#EE9D2B"></span>Partly Down %</span>
+      </div>
+    </div>
+    <div class="chart-box" id="trendChart"></div>
+  </div>
+
+  <div class="card table-card">
+    <div class="table-toolbar">
+      <div>
+        <div class="card-title" id="tableTitle">Region-wise Summary</div>
+        <div class="card-caption" id="tableCaption">Click any row to drill down to store level</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input placeholder="Search...">
+        </div>
+        <button class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+          Export
+        </button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card schedule-card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Scheduled Email Reports</div>
+        <div class="card-caption">Automated downtime summaries delivered to stakeholders</div>
+      </div>
+      <button class="btn btn-ghost" id="addScheduleBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        New Schedule
+      </button>
+    </div>
+    <div id="scheduleList"></div>
+  </div>
+
+  <footer>Outmarch Proprietary | Confidential — sample data shown for design reference only</footer>
+</div>
+
+<!-- Schedule Modal -->
+<div class="modal-overlay" id="scheduleModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Schedule New Report</h3>
+      <div class="close-x" id="closeModal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M6 18L18 6"/></svg>
+      </div>
+    </div>
+    <div class="modal-sub">Reports will be generated for the current scope and emailed automatically</div>
+    <div class="form-row">
+      <label>Report Name</label>
+      <input type="text" placeholder="e.g. West Region — Weekly Downtime Summary">
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>Frequency</label>
+        <select><option>Daily</option><option selected>Weekly — Monday 8:00 AM</option><option>Monthly — 1st</option></select>
+      </div>
+      <div class="form-row">
+        <label>Format</label>
+        <select><option>PDF</option><option>Excel (.xlsx)</option><option>Both</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Recipients</label>
+      <input type="text" placeholder="ops-team@citymax.com, regional.head@citymax.com">
+    </div>
+    <div class="form-row">
+      <label>Scope</label>
+      <input type="text" id="modalScope" disabled>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelModal">Cancel</button>
+      <button class="btn btn-primary">Save Schedule</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ deterministic pseudo-random ============ */
+function lcg(seed){ let s = Math.abs(Math.floor(seed)) % 2147483647; if(s<=0) s+=2147483646; return function(){ s = (s*16807) % 2147483647; return (s-1)/2147483646; }; }
+function hashStr(str){ let h=0; for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) % 100000; } return h; }
+const fmtINR = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const fmtNum = n => n.toLocaleString('en-IN');
+
+/* ============ ride template pool ============ */
+const RIDE_POOL = [
+  {name:'Roller Coaster — Junior', category:'Rides'},
+  {name:'Bumper Cars Arena', category:'Rides'},
+  {name:'Trampoline Park — Zone B', category:'Rides'},
+  {name:'Laser Tag Arena', category:'Rides'},
+  {name:'Snow World Entry Bay', category:'Rides'},
+  {name:'VR Zone — Pod 1', category:'VR Attractions'},
+  {name:'VR Zone — Pod 2', category:'VR Attractions'},
+  {name:'Bowling Lane A', category:'Bowling'},
+  {name:'Bowling Lane B', category:'Bowling'},
+  {name:'Claw Machine — Arcade 12', category:'Arcade & Gaming'},
+  {name:'Air Hockey Table 03', category:'Arcade & Gaming'},
+  {name:'Soft Drink Vending Unit', category:'F&B / Vending'}
+];
+const CATEGORIES = ['All Categories','Rides','Arcade & Gaming','Bowling','VR Attractions','F&B / Vending'];
+const MIN_PER_MONTH = 30*660;
+
+function genRides(seedAdd, avgSalePerMin){
+  const rand = lcg(seedAdd*53+9);
+  const count = 6 + Math.floor(rand()*4);
+  return RIDE_POOL.slice(0,count).map(r=>{
+    const roll = rand();
+    let status='operational', downMin=0, partlyMin=0, downPct=0, oppCost=0;
+    if(roll<0.14){ status='down'; downMin=60+Math.floor(rand()*280); downPct=+((downMin/MIN_PER_MONTH)*100).toFixed(1); oppCost=downMin*avgSalePerMin; }
+    else if(roll<0.34){ status='partly'; partlyMin=30+Math.floor(rand()*180); oppCost=partlyMin*avgSalePerMin*0.45; }
+    return {name:r.name, category:r.category, status, downMin, partlyMin, downPct:+downPct.toFixed(1), oppCost:Math.round(oppCost), lastUpdate:`${1+Math.floor(rand()*22)} min ago`};
+  });
+}
+
+function genStore(regionName, idx, city){
+  const rand = lcg(hashStr(regionName)+idx*7+1);
+  const machines = 34 + Math.floor(rand()*56);
+  const down = +(1.6 + rand()*6.8).toFixed(1);
+  const partly = +(down*0.55 + rand()*2.6).toFixed(1);
+  const downQty = Math.max(1, Math.round(machines*down/100));
+  const partlyQty = Math.max(1, Math.round(machines*partly/100));
+  const monthlySales = 850000 + Math.floor(rand()*1750000);
+  const avgSalePerMin = +(monthlySales/30/660).toFixed(1);
+  const oppCost = Math.round(machines*MIN_PER_MONTH*(down/100)*avgSalePerMin*0.018);
+  return {
+    name:`Citymax – ${city}`, machines, down, partly, downQty, partlyQty,
+    oppCost, avgSalePerMin, monthlySales,
+    rides: genRides(idx+hashStr(regionName), avgSalePerMin)
+  };
+}
+
+function sumKey(arr,key){ return arr.reduce((a,o)=>a+o[key],0); }
+
+const REGIONS_BASE = [
+  {name:'North', cities:['Delhi','Gurugram','Noida','Lucknow','Chandigarh','Jaipur','Dehradun','Amritsar','Kanpur']},
+  {name:'South', cities:['Bengaluru','Chennai','Hyderabad','Kochi','Coimbatore','Vijayawada','Mysuru','Madurai']},
+  {name:'West', cities:['Mumbai','Pune','Ahmedabad','Surat','Nagpur','Vadodara','Aurangabad','Nashik','Indore','Rajkot','Thane']},
+  {name:'East', cities:['Kolkata','Bhubaneswar','Patna','Guwahati','Ranchi','Siliguri','Durgapur']},
+  {name:'Central', cities:['Bhopal','Raipur','Jabalpur','Gwalior','Ujjain']}
+];
+
+function buildRegions(){
+  return REGIONS_BASE.map((rb,ri)=>{
+    const stores = rb.cities.map((city,ci)=>genStore(rb.name, ri*20+ci, city));
+    const machines = sumKey(stores,'machines');
+    const downQty = sumKey(stores,'downQty');
+    const partlyQty = sumKey(stores,'partlyQty');
+    const oppCost = sumKey(stores,'oppCost');
+    const down = +((downQty/machines)*100).toFixed(1);
+    const partly = +((partlyQty/machines)*100).toFixed(1);
+    const avgSalePerMin = +(stores.reduce((a,s)=>a+s.avgSalePerMin*s.machines,0)/machines).toFixed(1);
+    return {name:rb.name, machines, down, partly, downQty, partlyQty, oppCost, avgSalePerMin, storeCount:stores.length, stores};
+  });
+}
+const REGIONS = buildRegions();
+const PAN = (()=>{
+  const machines = sumKey(REGIONS,'machines');
+  const downQty = sumKey(REGIONS,'downQty');
+  const partlyQty = sumKey(REGIONS,'partlyQty');
+  const oppCost = sumKey(REGIONS,'oppCost');
+  const down = +((downQty/machines)*100).toFixed(1);
+  const partly = +((partlyQty/machines)*100).toFixed(1);
+  const avgSalePerMin = +(REGIONS.reduce((a,r)=>a+r.avgSalePerMin*r.machines,0)/machines).toFixed(1);
+  return {name:'PAN India', machines, down, partly, downQty, partlyQty, oppCost, avgSalePerMin, storeCount:sumKey(REGIONS,'storeCount'), regions:REGIONS};
+})();
+const CATEGORY_SPLIT = [
+  {name:'Rides', pct:.39, color:'#15315E'},
+  {name:'Arcade & Gaming', pct:.27, color:'#1D3E6E'},
+  {name:'Bowling', pct:.12, color:'#3C5A8A'},
+  {name:'VR Attractions', pct:.11, color:'#6E89B5'},
+  {name:'F&B / Vending', pct:.11, color:'#A6B7D6'}
+];
+const REASONS = [
+  {name:'Mechanical Failure', val:34, color:'#E0524A'},
+  {name:'Power / Electrical', val:18, color:'#EE9D2B'},
+  {name:'Sensor / Software Fault', val:16, color:'#15315E'},
+  {name:'Scheduled Maintenance', val:14, color:'#0EA88F'},
+  {name:'Staff Unavailability', val:10, color:'#9AA3B8'},
+  {name:'Other', val:8, color:'#D7DCE6'}
+];
+
+/* ============ state ============ */
+let state = {level:'pan', regionIdx:null, storeIdx:null};
+
+function currentScope(){
+  if(state.level==='pan') return PAN;
+  if(state.level==='region') return REGIONS[state.regionIdx];
+  return REGIONS[state.regionIdx].stores[state.storeIdx];
+}
+function statusBadge(status){
+  if(status==='down') return `<span class="badge badge-down"><span class="d"></span>Down</span>`;
+  if(status==='partly') return `<span class="badge badge-partly"><span class="d"></span>Partly Down</span>`;
+  return `<span class="badge badge-ok"><span class="d"></span>Operational</span>`;
+}
+function chevronSvg(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>`; }
+
+/* ============ render: breadcrumb ============ */
+function renderBreadcrumb(){
+  const el = document.getElementById('breadcrumb');
+  let html = `<span class="${state.level==='pan'?'current':''}" onclick="goPan()">PAN India</span>`;
+  if(state.level==='region' || state.level==='store'){
+    html += chevronSvg() + `<span class="${state.level==='region'?'current':''}" onclick="goRegion(${state.regionIdx})">${REGIONS[state.regionIdx].name} Region</span>`;
+  }
+  if(state.level==='store'){
+    html += chevronSvg() + `<span class="current">${REGIONS[state.regionIdx].stores[state.storeIdx].name}</span>`;
+  }
+  el.innerHTML = html;
+  document.getElementById('scopeNote').textContent = state.level==='pan' ? '40 stores · 5 regions · 5 asset categories' : state.level==='region' ? `${REGIONS[state.regionIdx].storeCount} stores in this region` : `${REGIONS[state.regionIdx].stores[state.storeIdx].rides.length} tracked assets at this store`;
+}
+function goPan(){ state={level:'pan',regionIdx:null,storeIdx:null}; renderAll(); }
+function goRegion(ri){ state={level:'region',regionIdx:ri,storeIdx:null}; renderAll(); }
+function goStore(ri,si){ state={level:'store',regionIdx:ri,storeIdx:si}; renderAll(); }
+
+/* ============ render: KPI cards ============ */
+function ringSvg(opPct, partlyPct, downPct, size=78){
+  const r = size/2 - 7, c = 2*Math.PI*r, cx=size/2, cy=size/2;
+  const opLen = c*(opPct/100), partlyLen = c*(partlyPct/100), downLen = c*(downPct/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EEF1F6" stroke-width="9"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#0EA88F" stroke-width="9" stroke-dasharray="${opLen} ${c-opLen}" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EE9D2B" stroke-width="9" stroke-dasharray="${partlyLen} ${c-partlyLen}" stroke-dashoffset="${-opLen}" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#E0524A" stroke-width="9" stroke-dasharray="${downLen} ${c-downLen}" stroke-dashoffset="${-(opLen+partlyLen)}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderKPIs(){
+  const s = currentScope();
+  const opPct = +(100 - s.down - s.partly).toFixed(1);
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = `
+    <div class="card">
+      <div class="kpi-label">Total Machines Qty</div>
+      <div class="kpi-value">${fmtNum(s.machines)}</div>
+      <div class="kpi-sub">${state.level==='pan'?`${PAN.regions.length} regions · ${PAN.storeCount} stores`: state.level==='region' ? `${s.storeCount} stores in ${s.name}` : 'assets tracked at this store'}</div>
+      <div class="catbars">
+        ${CATEGORY_SPLIT.map(c=>`<div class="catbar-row"><span class="name">${c.name}</span><div class="catbar-track"><div class="catbar-fill" style="width:${c.pct*100}%;background:${c.color}"></div></div><span class="qty">${Math.round(s.machines*c.pct)}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card ring-card">
+      <div class="ring-wrap">${ringSvg(opPct, s.partly, s.down)}
+        <div class="ring-center"><div class="n">${opPct}%</div><div class="l">Healthy</div></div>
+      </div>
+      <div>
+        <div class="kpi-label" style="margin-bottom:6px;">Fleet Health</div>
+        <div class="legend-row"><span class="legend-dot" style="background:#0EA88F"></span>Operational — ${opPct}%</div>
+        <div class="legend-row"><span class="legend-dot" style="background:#EE9D2B"></span>Partly Down — ${s.partly}%</div>
+        <div class="legend-row"><span class="legend-dot" style="background:#E0524A"></span>Down — ${s.down}%</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpi-label">Down % <span class="trend-tag trend-up">▲ 0.6</span></div>
+      <div class="kpi-value" style="color:#E0524A">${s.down}%</div>
+      <div class="kpi-sub">${fmtNum(s.downQty)} machines fully down</div>
+      <div class="kpi-formula">Down % = Down Min ÷ Total Operational Min</div>
+    </div>
+
+    <div class="card">
+      <div class="kpi-label">Partly Down % <span class="trend-tag trend-down">▼ 0.3</span></div>
+      <div class="kpi-value" style="color:#EE9D2B">${s.partly}%</div>
+      <div class="kpi-sub">${fmtNum(s.partlyQty)} machines intermittent</div>
+      <div class="kpi-formula">Partly Down % = Partly Down Min ÷ Total Operational Min</div>
+    </div>
+
+    <div class="card">
+      <div class="kpi-label">Down Qty</div>
+      <div class="kpi-value">${fmtNum(s.downQty)}</div>
+      <div class="kpi-sub">of ${fmtNum(s.machines)} total assets</div>
+    </div>
+
+    <div class="card">
+      <div class="kpi-label">Partly Down Qty</div>
+      <div class="kpi-value">${fmtNum(s.partlyQty)}</div>
+      <div class="kpi-sub">of ${fmtNum(s.machines)} total assets</div>
+    </div>
+
+    <div class="card">
+      <div class="kpi-label">Opportunity Cost</div>
+      <div class="kpi-value" style="font-size:22px;color:#E0524A">${fmtINR(s.oppCost)}</div>
+      <div class="kpi-sub">estimated revenue loss, this period</div>
+      <div class="kpi-formula">= Downtime Min × Avg Sale / Min</div>
+    </div>
+
+    <div class="card">
+      <div class="kpi-label">Avg Sale / Min</div>
+      <div class="kpi-value" style="font-size:22px;color:#0EA88F">₹${s.avgSalePerMin}</div>
+      <div class="kpi-sub">blended across all machines in scope</div>
+      <div class="kpi-formula">= Monthly Sales ÷ 30 ÷ 660 min</div>
+    </div>
+  `;
+}
+
+/* ============ render: comparison chart + table ============ */
+function renderTableAndChart(){
+  const head = document.getElementById('tableHead');
+  const body = document.getElementById('tableBody');
+  const tableTitle = document.getElementById('tableTitle');
+  const tableCaption = document.getElementById('tableCaption');
+  const compTitle = document.getElementById('compTitle');
+
+  let labels, downData, partlyData, rowsHtml, colorBy;
+
+  if(state.level==='pan'){
+    tableTitle.textContent = 'Region-wise Summary';
+    tableCaption.textContent = 'Click any row to drill down to store level';
+    compTitle.textContent = 'Down % by Region';
+    head.innerHTML = `<tr><th>Region</th><th>Stores</th><th>Machines</th><th>Down %</th><th>Partly Down %</th><th>Down Qty</th><th>Partly Qty</th><th>Opportunity Cost</th><th>Avg Sale/Min</th><th></th></tr>`;
+    rowsHtml = REGIONS.map((r,ri)=>`
+      <tr class="clickable" onclick="goRegion(${ri})">
+        <td><div class="name-cell"><span class="row-bar" style="background:${r.down>5?'#E0524A':r.down>3.5?'#EE9D2B':'#0EA88F'}"></span>${r.name} Region</div></td>
+        <td class="num">${r.storeCount}</td>
+        <td class="num">${fmtNum(r.machines)}</td>
+        <td class="num" style="color:#E0524A">${r.down}%</td>
+        <td class="num" style="color:#9C6213">${r.partly}%</td>
+        <td class="num">${r.downQty}</td>
+        <td class="num">${r.partlyQty}</td>
+        <td class="num">${fmtINR(r.oppCost)}</td>
+        <td class="num">₹${r.avgSalePerMin}</td>
+        <td class="chevcell">${chevronSvg()}</td>
+      </tr>`).join('');
+    labels = REGIONS.map(r=>r.name);
+    downData = REGIONS.map(r=>r.down);
+    partlyData = REGIONS.map(r=>r.partly);
+  }
+  else if(state.level==='region'){
+    const region = REGIONS[state.regionIdx];
+    tableTitle.textContent = `Store-wise Summary — ${region.name} Region`;
+    tableCaption.textContent = 'Click any row to drill down to ride / machine level';
+    compTitle.textContent = `Down % by Store — ${region.name}`;
+    head.innerHTML = `<tr><th>Store</th><th>Machines</th><th>Down %</th><th>Partly Down %</th><th>Down Qty</th><th>Partly Qty</th><th>Opportunity Cost</th><th>Avg Sale/Min</th><th></th></tr>`;
+    rowsHtml = region.stores.map((s,si)=>`
+      <tr class="clickable" onclick="goStore(${state.regionIdx},${si})">
+        <td><div class="name-cell"><span class="row-bar" style="background:${s.down>5?'#E0524A':s.down>3.5?'#EE9D2B':'#0EA88F'}"></span>${s.name}</div></td>
+        <td class="num">${s.machines}</td>
+        <td class="num" style="color:#E0524A">${s.down}%</td>
+        <td class="num" style="color:#9C6213">${s.partly}%</td>
+        <td class="num">${s.downQty}</td>
+        <td class="num">${s.partlyQty}</td>
+        <td class="num">${fmtINR(s.oppCost)}</td>
+        <td class="num">₹${s.avgSalePerMin}</td>
+        <td class="chevcell">${chevronSvg()}</td>
+      </tr>`).join('');
+    labels = region.stores.map(s=>s.name.replace('Citymax – ',''));
+    downData = region.stores.map(s=>s.down);
+    partlyData = region.stores.map(s=>s.partly);
+  }
+  else {
+    const store = REGIONS[state.regionIdx].stores[state.storeIdx];
+    tableTitle.textContent = `Ride / Machine-wise Detail — ${store.name}`;
+    tableCaption.textContent = 'Leaf level — individual asset status';
+    compTitle.textContent = `Down % by Ride — ${store.name.replace('Citymax – ','')}`;
+    head.innerHTML = `<tr><th>Ride / Machine</th><th>Category</th><th>Status</th><th>Down Min</th><th>Partly Min</th><th>Down %</th><th>Opportunity Cost</th><th>Last Updated</th></tr>`;
+    rowsHtml = store.rides.map(r=>`
+      <tr>
+        <td><div class="name-cell"><span class="row-bar" style="background:${r.status==='down'?'#E0524A':r.status==='partly'?'#EE9D2B':'#0EA88F'}"></span>${r.name}</div></td>
+        <td class="muted-cell">${r.category}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td class="num">${r.downMin||'—'}</td>
+        <td class="num">${r.partlyMin||'—'}</td>
+        <td class="num">${r.downPct?r.downPct+'%':'—'}</td>
+        <td class="num">${r.oppCost?fmtINR(r.oppCost):'—'}</td>
+        <td class="muted-cell">${r.lastUpdate}</td>
+      </tr>`).join('');
+    labels = store.rides.map(r=>r.name.split(' — ')[0].split(' ').slice(0,2).join(' '));
+    downData = store.rides.map(r=>r.downPct);
+    partlyData = store.rides.map(r=>r.status==='partly'? +((r.partlyMin/MIN_PER_MONTH)*100).toFixed(1) : 0);
+  }
+
+  body.innerHTML = rowsHtml;
+  updateCompChart(labels, downData, partlyData);
+}
+
+function barChartSvg(labels, downData, partlyData){
+  const n = labels.length;
+  const rotate = n > 6;
+  const W = 660, H = 230, padL = 36, padR = 10, padT = 10, padB = rotate ? 56 : 32;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxVal = Math.max(1, ...downData, ...partlyData);
+  const niceMax = Math.max(2, Math.ceil(maxVal/2)*2);
+  const groupW = plotW / n;
+  const barW = Math.min(20, groupW*0.32);
+  const gap = barW*0.22;
+  let grid='', axis='', bars='';
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const y = padT + plotH - (plotH*i/steps);
+    const val = Math.round(niceMax*i/steps);
+    grid += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#EEF1F6" stroke-width="1"/>`;
+    axis += `<text x="${padL-7}" y="${y+3}" text-anchor="end" font-size="9.5" font-family="JetBrains Mono, monospace" fill="#9AA3B8">${val}%</text>`;
+  }
+  const maxChars = Math.max(5, Math.floor(groupW/6.2));
+  labels.forEach((lab,i)=>{
+    const cx = padL + groupW*i + groupW/2;
+    const dH = (downData[i]/niceMax)*plotH, pH = (partlyData[i]/niceMax)*plotH;
+    const dx = cx - barW - gap/2, px = cx + gap/2;
+    bars += `<rect x="${dx}" y="${padT+plotH-dH}" width="${barW}" height="${Math.max(dH,1.5)}" rx="3" fill="#E0524A"/>`;
+    bars += `<rect x="${px}" y="${padT+plotH-pH}" width="${barW}" height="${Math.max(pH,1.5)}" rx="3" fill="#EE9D2B"/>`;
+    const short = lab.length>maxChars ? lab.slice(0,maxChars-1)+'…' : lab;
+    if(rotate){
+      axis += `<text x="${cx}" y="${H-padB+14}" text-anchor="end" font-size="9.5" font-family="Inter, sans-serif" fill="#707A93" transform="rotate(-38 ${cx} ${H-padB+14})">${short}</text>`;
+    } else {
+      axis += `<text x="${cx}" y="${H-12}" text-anchor="middle" font-size="9.5" font-family="Inter, sans-serif" fill="#707A93">${short}</text>`;
+    }
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${bars}${axis}</svg>`;
+}
+function updateCompChart(labels, downData, partlyData){
+  document.getElementById('compChart').innerHTML = barChartSvg(labels, downData, partlyData);
+}
+
+/* ============ trend chart ============ */
+function trendDataFor(name){
+  const rand = lcg(hashStr(name)+3);
+  const labels = Array.from({length:12},(_,i)=>`W${i+1}`);
+  const down = labels.map(()=>+(2.5+rand()*4.5).toFixed(1));
+  const partly = labels.map(()=>+(3+rand()*4).toFixed(1));
+  return {labels, down, partly};
+}
+function lineChartSvg(labels, downData, partlyData){
+  const W=700, H=220, padL=36, padR=14, padT=14, padB=26;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const n=labels.length;
+  const maxVal = Math.max(1, ...downData, ...partlyData);
+  const niceMax = Math.max(2, Math.ceil(maxVal/2)*2);
+  const stepX = plotW/(n-1);
+  const ptX = i => padL+stepX*i;
+  const ptY = v => padT+plotH-(v/niceMax)*plotH;
+  let grid='', axis='';
+  const steps=4;
+  for(let i=0;i<=steps;i++){
+    const y=padT+plotH-(plotH*i/steps);
+    const val=Math.round(niceMax*i/steps);
+    grid += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#EEF1F6" stroke-width="1"/>`;
+    axis += `<text x="${padL-7}" y="${y+3}" text-anchor="end" font-size="9.5" font-family="JetBrains Mono, monospace" fill="#9AA3B8">${val}%</text>`;
+  }
+  labels.forEach((lab,i)=>{
+    axis += `<text x="${ptX(i)}" y="${H-6}" text-anchor="middle" font-size="9" font-family="Inter, sans-serif" fill="#9AA3B8">${lab}</text>`;
+  });
+  const buildPath = data => data.map((v,i)=>(i===0?'M':'L')+ptX(i).toFixed(1)+','+ptY(v).toFixed(1)).join(' ');
+  const buildArea = data => buildPath(data)+` L${ptX(n-1).toFixed(1)},${(padT+plotH).toFixed(1)} L${ptX(0).toFixed(1)},${(padT+plotH).toFixed(1)} Z`;
+  const dotsFor = (data,color) => data.map((v,i)=>`<circle cx="${ptX(i).toFixed(1)}" cy="${ptY(v).toFixed(1)}" r="2.6" fill="${color}"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">
+    ${grid}
+    <path d="${buildArea(partlyData)}" fill="rgba(238,157,43,.10)" stroke="none"/>
+    <path d="${buildArea(downData)}" fill="rgba(224,82,74,.10)" stroke="none"/>
+    <path d="${buildPath(partlyData)}" fill="none" stroke="#EE9D2B" stroke-width="2"/>
+    <path d="${buildPath(downData)}" fill="none" stroke="#E0524A" stroke-width="2"/>
+    ${dotsFor(partlyData,'#EE9D2B')}${dotsFor(downData,'#E0524A')}
+    ${axis}
+  </svg>`;
+}
+function renderTrend(){
+  const s = currentScope();
+  document.getElementById('trendTitle').innerHTML = `Down % &amp; Partly Down % Trend — ${s.name}`;
+  const {labels, down, partly} = trendDataFor(s.name);
+  document.getElementById('trendChart').innerHTML = lineChartSvg(labels, down, partly);
+}
+
+/* ============ reason donut (static) ============ */
+function donutChartSvg(segments, size=170){
+  const total = segments.reduce((a,s)=>a+s.val,0);
+  const r = size/2-14, cx=size/2, cy=size/2, c=2*Math.PI*r;
+  let offset=0, arcs='';
+  segments.forEach(seg=>{
+    const len = c*(seg.val/total);
+    arcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="22" stroke-dasharray="${len.toFixed(1)} ${(c-len).toFixed(1)}" stroke-dashoffset="${(-offset).toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += len;
+  });
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F2F4F8" stroke-width="22"/>${arcs}</svg>`;
+}
+function renderReasonChart(){
+  document.getElementById('reasonChart').innerHTML = donutChartSvg(REASONS, 170);
+  document.getElementById('reasonLegend').innerHTML = REASONS.map(r=>`
+    <div class="donut-legend-row"><div class="left"><span class="legend-dot" style="background:${r.color}"></span>${r.name}</div><span class="val">${r.val}%</span></div>
+  `).join('');
+}
+
+/* ============ schedule list ============ */
+const SCHEDULES = [
+  {name:'PAN India — Daily Ops Summary', meta:'Daily · 8:00 AM · ops-team@citymax.com'},
+  {name:'West Region — Weekly Downtime Report', meta:'Weekly · Monday 8:00 AM · regional.head.west@citymax.com'},
+  {name:'Leadership — Monthly Opportunity Cost Brief', meta:'Monthly · 1st, 9:00 AM · leadership@citymax.com, outmarch.success@outmarch.com'}
+];
+function renderSchedules(){
+  document.getElementById('scheduleList').innerHTML = SCHEDULES.map(s=>`
+    <div class="sched-row">
+      <div class="sched-left">
+        <div class="sched-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
+        <div><div class="sched-name">${s.name}</div><div class="sched-meta">${s.meta}</div></div>
+      </div>
+      <div class="sched-actions">
+        <div class="iconbtn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-12 12H5v-4z"/></svg></div>
+        <div class="iconbtn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0l1 13h8l1-13"/></svg></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ============ filter bar wiring ============ */
+function populateFilters(){
+  const regionSelect = document.getElementById('regionSelect');
+  REGIONS.forEach((r,ri)=>{ const o=document.createElement('option'); o.value=ri; o.textContent=r.name+' Region'; regionSelect.appendChild(o); });
+  regionSelect.addEventListener('change', e=>{
+    if(e.target.value==='') goPan(); else goRegion(+e.target.value);
+  });
+  document.getElementById('storeSelect').addEventListener('change', e=>{
+    if(e.target.value!=='' && state.regionIdx!==null) goStore(state.regionIdx, +e.target.value);
+  });
+
+  const chipsWrap = document.getElementById('categoryChips');
+  chipsWrap.innerHTML = CATEGORIES.map((c,i)=>`<div class="chip ${i===0?'active':''}" data-c="${c}">${c}</div>`).join('');
+  chipsWrap.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{ chipsWrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); });
+  });
+
+  document.querySelectorAll('#periodSeg button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const ranges = {D:'18 Jun 2026', W:'15 – 21 Jun 2026', M:'1 – 30 Jun 2026', Q:'Apr – Jun 2026', HY:'Jan – Jun 2026', Y:'2026'};
+      document.getElementById('dateRangeLabel').textContent = ranges[btn.dataset.p];
+    });
+  });
+}
+function syncFilterSelects(){
+  const regionSelect = document.getElementById('regionSelect');
+  const storeSelect = document.getElementById('storeSelect');
+  regionSelect.value = state.regionIdx===null ? '' : state.regionIdx;
+  storeSelect.innerHTML = '<option value="">All Stores</option>';
+  storeSelect.disabled = state.regionIdx===null;
+  if(state.regionIdx!==null){
+    REGIONS[state.regionIdx].stores.forEach((s,si)=>{ const o=document.createElement('option'); o.value=si; o.textContent=s.name.replace('Citymax – ',''); storeSelect.appendChild(o); });
+    if(state.storeIdx!==null) storeSelect.value = state.storeIdx;
+  }
+}
+
+/* ============ modal ============ */
+function wireModal(){
+  const overlay = document.getElementById('scheduleModal');
+  const open = ()=>{
+    const s = currentScope();
+    document.getElementById('modalScope').value = state.level==='pan' ? 'PAN India (all regions)' : state.level==='region' ? `${s.name} Region` : s.name;
+    overlay.classList.add('show');
+  };
+  document.getElementById('openScheduleBtn').addEventListener('click', open);
+  document.getElementById('addScheduleBtn').addEventListener('click', open);
+  document.getElementById('closeModal').addEventListener('click', ()=>overlay.classList.remove('show'));
+  document.getElementById('cancelModal').addEventListener('click', ()=>overlay.classList.remove('show'));
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.classList.remove('show'); });
+}
+
+/* ============ master render ============ */
+function renderAll(){
+  renderBreadcrumb();
+  syncFilterSelects();
+  renderKPIs();
+  renderTableAndChart();
+  renderTrend();
+}
+
+populateFilters();
+wireModal();
+renderReasonChart();
+renderSchedules();
+renderAll();
+</script>
+</body>
+</html>
